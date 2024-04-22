@@ -71,24 +71,23 @@ app.get('/api/users', (req, res,done) => {
 });
 
 //add exercise
-//add exercise
-app.post('/api/users/:_id/exercises', (req, res, done) => {
+app.post('/api/users/:_id/exercises', (req, res,done) => {
   //obtain from index html
-  let { description, duration, date } = req.body;
-  let { _id } = req.params;
+  let {description,duration,date} = req.body;
+  let {_id} = req.params;
 
-  if (!date) {
+  if (!date){
     date = new Date();
     date = date.toDateString();
-  } else {
+  }else{
     date = new Date(date);
     date = date.toDateString();
   };
 
   //update by adding exercises submitted
-  Exercise.findById(_id, (err, exercise) => {
+  const exercise = Exercise.findById(_id, (err, exercise) => {
     if (err) return console.log(err);
-    if (!exercise) { return res.json({ "_id": "unfound" }) };
+    if (!exercise){return res.json({"_id":"unfound"})};
 
     exercise.count++;
 
@@ -97,26 +96,17 @@ app.post('/api/users/:_id/exercises', (req, res, done) => {
       duration,
       date
     });
-
-    exercise.save((err, updatedExercise) => {
-      if (err) return console.log(err);
-
-      // Obtener el objeto de usuario actualizado
-      Exercise.findById(_id, (err, updatedUser) => {
-        if (err) return console.log(err);
-        if (!updatedUser) { return res.json({ "_id": "unfound" }) };
-
-        // Devolver el objeto de usuario con los campos de ejercicio agregados
-        res.json({
-          _id: _id,
-          username: updatedUser.username,
-          date,
-          duration: parseInt(duration),
-          description
-        });
-
-        done(null, updatedExercise);
+    
+    exercise.save((err, updatedPerson) => {
+      if(err) return console.log(err);
+      res.json({
+        _id: _id,
+        username: exercise.username,
+        date,
+        duration: parseInt(duration), // Asegurar que duration sea un número
+        description
       });
+      done(null, updatedPerson)
     });
   });
 });
