@@ -137,7 +137,7 @@ app.get('/api/users/:_id/logs', (req, res,done) => {
     done(null, exercise);
   });
 });
-// inicia
+/*
 app.get('/api/users/:_id/logs', (req, res,done) => {
   const {_id} = req.params;
   let {from, to, limit}= req.query;
