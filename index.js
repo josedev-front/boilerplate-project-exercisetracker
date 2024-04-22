@@ -71,23 +71,24 @@ app.get('/api/users', (req, res,done) => {
 });
 
 //add exercise
-app.post('/api/users/:_id/exercises', (req, res,done) => {
+//add exercise
+app.post('/api/users/:_id/exercises', (req, res, done) => {
   //obtain from index html
-  let {description,duration,date} = req.body;
-  let {_id} = req.params;
+  let { description, duration, date } = req.body;
+  let { _id } = req.params;
 
-  if (!date){
+  if (!date) {
     date = new Date();
     date = date.toDateString();
-  }else{
+  } else {
     date = new Date(date);
     date = date.toDateString();
   };
 
   //update by adding exercises submitted
-  const exercise = Exercise.findById(_id, (err, exercise) => {
+  Exercise.findById(_id, (err, exercise) => {
     if (err) return console.log(err);
-    if (!exercise){return res.json({"_id":"unfound"})};
+    if (!exercise) { return res.json({ "_id": "unfound" }) };
 
     exercise.count++;
 
@@ -96,18 +97,26 @@ app.post('/api/users/:_id/exercises', (req, res,done) => {
       duration,
       date
     });
-    
-    res.json({
-    _id: _id,
-    username: exercise.username,
-    date,
-    duration: parseInt(duration),
-    description
-    });
-    
-    exercise.save((err, updatedPerson) => {
-      if(err) return console.log(err);
-      done(null, updatedPerson)
+
+    exercise.save((err, updatedExercise) => {
+      if (err) return console.log(err);
+
+      // Obtener el objeto de usuario actualizado
+      Exercise.findById(_id, (err, updatedUser) => {
+        if (err) return console.log(err);
+        if (!updatedUser) { return res.json({ "_id": "unfound" }) };
+
+        // Devolver el objeto de usuario con los campos de ejercicio agregados
+        res.json({
+          _id: _id,
+          username: updatedUser.username,
+          date,
+          duration: parseInt(duration),
+          description
+        });
+
+        done(null, updatedExercise);
+      });
     });
   });
 });
@@ -117,12 +126,11 @@ app.get('/api/users/:_id/logs', (req, res,done) => {
   const {_id} = req.params;
   let {from, to, limit}= req.query;
 
-
   Exercise.findById(_id, (err, exercise) => {
     if (err) return console.log(err);
     if (!exercise){return res.json({"_id":"unfound"})};
 
-    exercise.log.map(a=>a.duration=parseInt(a.duration));
+    exercise.log.forEach(a => a.duration = parseInt(a.duration)); // Asegurar que duration sea un número
     if (from){exercise.log.filter(a => a.date>=from)};
     if (to){exercise.log.filter(a => a.date>=to)};
     if (limit){exercise.log=exercise.log.slice(0,limit)}
@@ -137,32 +145,6 @@ app.get('/api/users/:_id/logs', (req, res,done) => {
     done(null, exercise);
   });
 });
-/*
-app.get('/api/users/:_id/logs', (req, res,done) => {
-  const {_id} = req.params;
-  let {from, to, limit}= req.query;
-
-
-  Exercise.findById(_id, (err, exercise) => {
-    if (err) return console.log(err);
-    if (!exercise){return res.json({"_id":"unfound"})};
-
-    exercise.log.map(a=>a.duration=parseInt(a.duration));
-    exercise.log.
-    
-    res.json({
-      _id: _id,
-      username: exercise.username,
-      count: parseInt(exercise.count),
-      log: exercise.log
-    });
-    
-    done(null, exercise);
-  });
-});
-
-//****************************************/
-
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port)
