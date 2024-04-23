@@ -4,6 +4,20 @@ const cors = require('cors');
 require('dotenv').config();
 const mongoose = require('mongoose');
 
+const checkDate = (date) => {
+  if (!date) {
+      return (new Date(Date.now())).toISOString().slice(0, 10);
+  } else {
+      const parts = date.split('-');
+      const year = parseInt(parts[0]);
+      const month = parseInt(parts[1]) - 1;
+      const day = parseInt(parts[2]);
+
+      const utcDate = new Date(Date.UTC(year, month, day));
+      return utcDate.toISOString().slice(0, 10);
+  }
+}
+
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const Schema = mongoose.Schema;
@@ -64,7 +78,6 @@ app.post('/api/users/:_id/exercises', (req, res) => {
   };
 
   let newExercise = new exerciseModel(exerciseObj);
-
   userModel.findById(userId, (err, userFound) => {
     if (err) {
       console.error(err);
@@ -82,7 +95,7 @@ app.post('/api/users/:_id/exercises', (req, res) => {
             username: userFound.username,
             description: exercise.description,
             duration: exercise.duration,
-            date: exercise.date.toISOString().slice(0, 10)
+            date: exercise.date.toDateString()
           });
         }
       });
