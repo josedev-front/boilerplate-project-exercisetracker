@@ -82,7 +82,7 @@ app.post('/api/users/:_id/exercises', (req, res) => {
             username: userFound.username,
             description: exercise.description,
             duration: exercise.duration,
-            date: exercise.date.toDateString()
+            date: exercise.date.toISOString().slice(0, 10)
           });
         }
       });
