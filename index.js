@@ -74,10 +74,11 @@ app.post('/api/users/:_id/exercises', (req, res) => {
     userId: userId,
     description: req.body.description,
     duration: req.body.duration,
-    date: req.body.date ? new Date(req.body.date) : Date.now()
+    date: checkDate(req.body.date) // Utilizar la función checkDate para manejar la fecha
   };
 
   let newExercise = new exerciseModel(exerciseObj);
+
   userModel.findById(userId, (err, userFound) => {
     if (err) {
       console.error(err);
