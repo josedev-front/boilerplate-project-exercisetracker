@@ -85,7 +85,7 @@ app.post('/api/users/:_id/exercises', (req, res,done) => {
   };
 
   //update by adding exercises submitted
-  const exercise = exercise.findById(_id, (err, exercise) => {
+  const exercise = Exercise.findById(_id, (err, exercise) => {
     if (err) return console.log(err);
     if (!exercise){return res.json({"_id":"unfound"})};
 
