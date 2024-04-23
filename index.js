@@ -51,40 +51,6 @@ app.post("/api/users", async (req, res) => {
 });
 
 // aqui el dilema
-app.post("/api/users/:_id/exercises", async (req, res) => {
-  try {
-    const { _id } = req.params._id;
-    const { description, duration, date } = req.body;
-
-    const user = await User.findById(_id);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    const exercise = new Exercise({
-      user_id: _id,
-      description,
-      duration,
-      date: date ? new Date(date) : new Date()
-    });
-    await exercise.save();
-
-    res.json({
-      _id: user._id,
-      username: user.username,
-      description: exercise.description,
-      duration: exercise.duration,
-      date: exercise.date.toDateString()
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-
-
-
 /*app.post("/api/users/:_id/exercises", async (req, res) => {
   try {
     const { _id } = req.params;
@@ -103,24 +69,47 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
     });
     await exercise.save();
 
-    // Agregar el ejercicio al usuario
-    user.exercises.push(exercise);
-    await user.save();
-
-    // Incluir los detalles del usuario en la respuesta
     res.json({
       _id: user._id,
       username: user.username,
       description: exercise.description,
       duration: exercise.duration,
       date: exercise.date.toDateString()
-      // Puedes incluir más campos del usuario si es necesario
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });*/
+
+
+app.post("/api/users/:_id/exercises", async (req, res) => {
+ 
+    let user_id = req.params._id;
+    let exerciseObj = {
+      userId: userId,
+      description: req.body.description,
+      duration: req.body.duration
+    }
+    if (req.body.date != '') {
+      exerciseObj.date = req.body.date
+    } 
+    let newExercise = new exerciseModel(exerceseObj);
+    userModel.findById(user_id, (err, userFound) => {
+      if (err) console.log(err);
+      
+      newExercise.save();
+      res.json({
+        _id: userFound._id,
+        username: userFound.username,
+        description: newExercise.description,
+        duration: newExercise.duration,
+        date: newExercise.date.toDateString()
+        
+      })
+    })
+})
+    
 
 
 // fin el dilema
