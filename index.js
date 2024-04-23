@@ -71,42 +71,42 @@ app.get('/api/users', (req, res,done) => {
 });
 
 //add exercise
-app.post('/api/users/:_id/exercises', (req, res,done) => {
-  //obtain from index html
-  let {description,duration,date} = req.body;
-  let {_id} = req.params;
+app.post('/api/users/:_id/exercises', (req, res, done) => {
+  //obtener los detalles del ejercicio desde la solicitud
+  let { description, duration, date } = req.body;
+  let { _id } = req.params;
 
-  if (!date){
+  if (!date) {
     date = new Date();
     date = date.toDateString();
-  }else{
+  } else {
     date = new Date(date);
     date = date.toDateString();
   };
 
-  //update by adding exercises submitted
-  const exercise = Exercise.findById(_id, (err, exercise) => {
+  //buscar el usuario por su ID
+  Exercise.findById(_id, (err, exercise) => {
     if (err) return console.log(err);
-    if (!exercise){return res.json({"_id":"unfound"})};
+    if (!exercise) { return res.json({ "_id": "unfound" }) };
 
+    //agregar el ejercicio al registro del usuario
     exercise.count++;
-
     exercise.log.push({
       description,
       duration,
       date
     });
-    
-    exercise.save((err, updatedPerson) => {
-      if(err) return console.log(err);
-      res.json({
-        _id: _id,
-        username: exercise.username,
-        date,
-        duration: parseInt(duration), // Asegurar que duration sea un número
-        description
+
+    //guardar los cambios en la base de datos
+    exercise.save((err, updatedExercise) => {
+      if (err) return console.log(err);
+
+      //buscar el usuario actualizado para devolverlo como respuesta
+      Exercise.findById(_id, (err, updatedUser) => {
+        if (err) return console.log(err);
+        res.json(updatedUser); //devolver el usuario actualizado con los campos de ejercicio agregados
+        done(null, updatedExercise);
       });
-      done(null, updatedPerson)
     });
   });
 });
