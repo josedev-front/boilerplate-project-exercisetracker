@@ -103,7 +103,6 @@ app.post('/api/users/:_id/exercises', (req, res) => {
     }
   });
 });
-
 app.get('/api/users/:_id/logs', (req, res) => {
   let userId = req.params._id;
   let responseObj = {};
