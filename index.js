@@ -3,158 +3,145 @@ const app = express();
 const cors = require('cors');
 require('dotenv').config();
 const mongoose = require('mongoose');
-const { Schema } = mongoose;
 
-mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 
-const UserSchema = new Schema({
-  username: String
+const Schema = mongoose.Schema;
+
+const userSchema = new Schema({
+  username: { type: String, required: true }
 });
-const User = mongoose.model("User", UserSchema);
 
-const ExerciseSchema = new Schema({
-  user_id: { type: String, required: true },
+const exerciseSchema = new Schema({
+  userId: { type: String, required: true },
   description: { type: String, required: true },
   duration: { type: Number, required: true },
-  date: { type: Date, default: new Date()},
+  date: { type: Date, default: Date.now }
 });
-const Exercise = mongoose.model("Exercise", ExerciseSchema);
+
+const userModel = mongoose.model("User", userSchema);
+const exerciseModel = mongoose.model("Exercise", exerciseSchema);
 
 app.use(cors());
 app.use(express.static('public'));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false }));
 
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html');
 });
 
-app.get("/api/users", async (req, res) => {
-  try {
-    const users = await User.find();
-    res.json(users);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+app.post('/api/users', (req, res) => {
+  let username = req.body.username;
+  let newUser = new userModel({ username: username });
+  newUser.save((err, user) => {
+    if (err) {
+      console.error(err);
+      res.status(500).json({ error: "Internal Server Error" });
+    } else {
+      res.json(user);
+    }
+  });
 });
 
-app.post("/api/users", async (req, res) => {
-  try {
-    const { username } = req.body;
-    const user = new User({ username });
-    await user.save();
-    res.json(user);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+app.get('/api/users', (req, res) => {
+  userModel.find({}, (err, users) => {
+    if (err) {
+      console.error(err);
+      res.status(500).json({ error: "Internal Server Error" });
+    } else {
+      res.json(users);
+    }
+  });
 });
 
-// aqui el dilema
-/*app.post("/api/users/:_id/exercises", async (req, res) => {
-  try {
-    const { _id } = req.params;
-    const { description, duration, date } = req.body;
-
-    const user = await User.findById(_id);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    const exercise = new Exercise({
-      user_id: _id,
-      description,
-      duration,
-      date: date ? new Date(date) : new Date()
-    });
-    await exercise.save();
-
-    res.json({
-      _id: user._id,
-      username: user.username,
-      description: exercise.description,
-      duration: exercise.duration,
-      date: exercise.date.toDateString()
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
+app.post('/api/users/:_id/exercises', (req, res) => {
+  let userId = req.params._id;
+  let exerciseObj = {
+    userId: userId,
+    description: req.body.description,
+    duration: req.body.duration
+  };
+  if (req.body.date) {
+    exerciseObj.date = new Date(req.body.date);
   }
-});*/
 
+  let newExercise = new exerciseModel(exerciseObj);
 
-app.post("/api/users/:_id/exercises", async (req, res) => {
- 
-    let user_id = req.params._id;
-    let exerciseObj = {
-      userId: userId,
-      description: req.body.description,
-      duration: req.body.duration
+  userModel.findById(userId, (err, userFound) => {
+    if (err) {
+      console.error(err);
+      res.status(500).json({ error: "Internal Server Error" });
+    } else if (!userFound) {
+      res.status(404).json({ error: "User not found" });
+    } else {
+      newExercise.save((err, exercise) => {
+        if (err) {
+          console.error(err);
+          res.status(500).json({ error: "Internal Server Error" });
+        } else {
+          res.json({
+            _id: userFound._id,
+            username: userFound.username,
+            description: exercise.description,
+            duration: exercise.duration,
+            date: exercise.date.toDateString()
+          });
+        }
+      });
     }
-    if (req.body.date != '') {
-      exerciseObj.date = req.body.date
-    } 
-    let newExercise = new exerciseModel(exerceseObj);
-    userModel.findById(user_id, (err, userFound) => {
-      if (err) console.log(err);
-      
-      newExercise.save();
-      res.json({
+  });
+});
+
+app.get('/api/users/:_id/logs', (req, res) => {
+  let userId = req.params._id;
+  let responseObj = {};
+  let limitParam = req.query.limit ? parseInt(req.query.limit) : 0;
+  let toParam = req.query.to;
+  let fromParam = req.query.from;
+  let queryObj = { userId: userId };
+
+  if (fromParam || toParam) {
+    queryObj.date = {};
+    if (fromParam) {
+      queryObj.date['$gte'] = new Date(fromParam);
+    }
+    if (toParam) {
+      queryObj.date['$lte'] = new Date(toParam);
+    }
+  }
+
+  userModel.findById(userId, (err, userFound) => {
+    if (err) {
+      console.error(err);
+      res.status(500).json({ error: "Internal Server Error" });
+    } else if (!userFound) {
+      res.status(404).json({ error: "User not found" });
+    } else {
+      responseObj = {
         _id: userFound._id,
-        username: userFound.username,
-        description: newExercise.description,
-        duration: newExercise.duration,
-        date: newExercise.date.toDateString()
-        
-      })
-    })
-})
-    
+        username: userFound.username
+      };
 
-
-// fin el dilema
-app.get("/api/users/:_id/logs", async (req, res) => {
-  try {
-    const { from, to, limit } = req.query;
-    const { _id } = req.params;
-
-    const user = await User.findById(_id);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      exerciseModel.find(queryObj).limit(limitParam).exec((err, exercises) => {
+        if (err) {
+          console.error(err);
+          res.status(500).json({ error: "Internal Server Error" });
+        } else {
+          exercises = exercises.map(exercise => ({
+            description: exercise.description,
+            duration: exercise.duration,
+            date: exercise.date.toDateString()
+          }));
+          responseObj.log = exercises;
+          responseObj.count = exercises.length;
+          res.json(responseObj);
+        }
+      });
     }
-
-    const filter = { user_id: _id };
-    if (from || to) {
-      filter.date = {};
-      if (from) {
-        filter.date.$gte = new Date(from);
-      }
-      if (to) {
-        filter.date.$lte = new Date(to);
-      }
-    }
-
-    let exercises = await Exercise.find(filter).limit(+limit || 500);
-
-    exercises = exercises.map(exercise => ({
-      description: exercise.description,
-      duration: exercise.duration,
-      date: exercise.date.toDateString()
-    }));
-
-    res.json({
-      _id: user._id,
-      username: user.username,
-      count: exercises.length,
-      log: exercises
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+  });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Your app is listening on port ${PORT}`);
 });
