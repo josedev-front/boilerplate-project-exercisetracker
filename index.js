@@ -81,7 +81,27 @@ app.post("/api/users", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });*/
-app.post("/api/users/:_id/exercises", async (req, res) => {
+
+app.post('/api/users/:_id/exercises', (req, res) => {
+  const _id = req.body[':_id']
+  const { description, duration, date } = req.body
+
+  Person.findById(_id, (err, data) => {
+    if (!data) {
+      res.send("User Not found")
+    } else {
+      const username = data.username
+      const addExercise = new Exercise({ userId: _id, username, description, duration, date })
+      addExercise.save((err, user) => {
+        if (err) console.log(err)
+        res.json({username:username, description:user.description, duration:user.duration, date: user.date.toDateString, _id})
+      })
+    }
+  })
+})
+
+
+/*app.post("/api/users/:_id/exercises", async (req, res) => {
   try {
     const { _id } = req.params;
     const { description, duration, date } = req.body;
@@ -116,7 +136,7 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Internal Server Error" });
   }
-});
+});*/
 
 
 // fin el dilema
