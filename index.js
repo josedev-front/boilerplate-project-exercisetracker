@@ -14,9 +14,9 @@ const User = mongoose.model("User", UserSchema);
 
 const ExerciseSchema = new Schema({
   user_id: { type: String, required: true },
-  description: String,
-  duration: Number,
-  date: Date
+  description: { type: String, required: true },
+  duration: { type: Number, required: true },
+  date: { type: Date, default: new Date()},
 });
 const Exercise = mongoose.model("Exercise", ExerciseSchema);
 
@@ -53,7 +53,7 @@ app.post("/api/users", async (req, res) => {
 // aqui el dilema
 app.post("/api/users/:_id/exercises", async (req, res) => {
   try {
-    const { _id } = req.params;
+    const { _id } = req.params._id;
     const { description, duration, date } = req.body;
 
     const user = await User.findById(_id);
