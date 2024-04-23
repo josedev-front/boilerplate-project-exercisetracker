@@ -53,8 +53,8 @@ app.post("/api/users", async (req, res) => {
 // aqui el dilema
 app.post("/api/users/:_id/exercises", async (req, res) => {
   try {
-    //const { _id } = req.params;
-    const { _id, description, duration, date } = req.body;
+    const { _id } = req.params;
+    const { description, duration, date } = req.body;
 
     const user = await User.findById(_id);
     if (!user) {
