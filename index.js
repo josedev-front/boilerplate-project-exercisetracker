@@ -53,7 +53,7 @@ app.get('/api/users', (req, res) => {
     }
   });
 });
-
+/*
 app.post('/api/users/:_id/exercises', (req, res) => {
   let userId = req.params._id;
   let exerciseObj = {
@@ -91,6 +91,50 @@ app.post('/api/users/:_id/exercises', (req, res) => {
     }
   });
 });
+*/
+app.post("/api/users/:_id/exercises", async (req, res) => {
+  let userId = req.params._id;
+  let description = req.body.description;
+  let duration = parseInt(req.body.duration);
+  let date = new Date(req.body.date);
+
+  if (date == "Invalid Date"){
+    date = new Date().toDateString()
+  } else {
+    date = new Date(date).toDateString()
+  }
+
+  if (description === ""){
+    return res.json({error: "description is required"})
+  }
+
+  if (duration === ""){
+    return res.json({error: "duration is required"})
+  } 
+  
+  let user = await User.findById(userId).select("username")
+
+  if (!user){
+    return res.json({error: "unknown userId"})
+  } 
+
+  let exercise = await Exercise.create({
+    username: user.username,
+    description, 
+    duration, 
+    date,
+    userId,
+  });
+
+  return res.json({
+    _id: user._id,
+    username: user.username,
+    date,
+    duration,
+    description,
+  });
+});
+
 
 app.get('/api/users/:_id/logs', (req, res) => {
   let userId = req.params._id;
