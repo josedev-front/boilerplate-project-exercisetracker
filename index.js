@@ -50,7 +50,8 @@ app.post("/api/users", async (req, res) => {
   }
 });
 
-app.post("/api/users/:_id/exercises", async (req, res) => {
+// aqui el dilema
+/*app.post("/api/users/:_id/exercises", async (req, res) => {
   try {
     const { _id } = req.params;
     const { description, duration, date } = req.body;
@@ -79,8 +80,46 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Internal Server Error" });
   }
+});*/
+app.post("/api/users/:_id/exercises", async (req, res) => {
+  try {
+    const { _id } = req.params;
+    const { description, duration, date } = req.body;
+
+    const user = await User.findById(_id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const exercise = new Exercise({
+      user_id: _id,
+      description,
+      duration,
+      date: date ? new Date(date) : new Date()
+    });
+    await exercise.save();
+
+    // Agregar el ejercicio al usuario
+    user.exercises.push(exercise);
+    await user.save();
+
+    // Incluir los detalles del usuario en la respuesta
+    res.json({
+      _id: user._id,
+      username: user.username,
+      description: exercise.description,
+      duration: exercise.duration,
+      date: exercise.date.toDateString()
+      // Puedes incluir más campos del usuario si es necesario
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
+
+// fin el dilema
 app.get("/api/users/:_id/logs", async (req, res) => {
   try {
     const { from, to, limit } = req.query;
