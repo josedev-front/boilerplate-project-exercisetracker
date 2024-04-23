@@ -59,24 +59,9 @@ app.post('/api/users/:_id/exercises', (req, res) => {
   let exerciseObj = {
     userId: userId,
     description: req.body.description,
-    duration: req.body.duration
+    duration: req.body.duration,
+    date: req.body.date ? new Date(req.body.date) : Date.now()
   };
-  const checkDate = (date) => {
-    if (!date) {
-        return (new Date(Date.now())).toDateString();
-    } else {
-        const parts = date.split('-');
-        const year = parseInt(parts[0]);
-        const month = parseInt(parts[1]) - 1;
-        const day = parseInt(parts[2]);
-
-        const utcDate = new Date(Date.UTC(year, month, day));
-        return new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000).toDateString();
-    }
-}
-  if (req.body.date) {
-    exerciseObj.date = new Date(req.body.date);
-  }
 
   let newExercise = new exerciseModel(exerciseObj);
 
@@ -104,8 +89,6 @@ app.post('/api/users/:_id/exercises', (req, res) => {
     }
   });
 });
-
-
 
 app.get('/api/users/:_id/logs', (req, res) => {
   let userId = req.params._id;
