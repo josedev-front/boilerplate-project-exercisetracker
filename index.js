@@ -194,10 +194,11 @@ app.get('/api/users/:_id/logs', async (req, res) => {
 
     const exercises = await exercisesQuery;
 
-    // Mapear las fechas a formato de cadena de texto utilizando el método toDateString()
+    // Mapear las fechas primero a formato de cadena de texto UTC utilizando el método toUTCString(),
+    // y luego a formato de fecha de cadena utilizando el método toDateString()
     const formattedExercises = exercises.map(exercise => ({
       ...exercise._doc,
-      date: new Date(exercise.date).toDateString()
+      date: new Date(exercise.date).toUTCString().toDateString() // Cambio aquí
     }));
 
     // Agregar un console log para ver los ejercicios formateados
