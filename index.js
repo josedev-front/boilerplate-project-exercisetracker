@@ -112,7 +112,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
       username: user.username,
       description,
       duration,
-      date: new Date(savedExercise.date).toDateString() // Convertir a formato de cadena de texto
+      date: new Date(savedExercise.date)//.toDateString() // Convertir a formato de cadena de texto
     };
 
     // Devolver la respuesta combinada
