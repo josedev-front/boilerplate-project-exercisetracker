@@ -93,6 +93,8 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   try {
     const { description, duration, date } = req.body;
     const userid = req.params._id;
+
+    // Guardar el nuevo ejercicio en la base de datos
     const newExercise = new Exercise({
       userid,
       description,
@@ -100,7 +102,21 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
       date: date ? new Date(date).getTime() : new Date().getTime()
     });
     const savedExercise = await newExercise.save();
-    res.json({ _id: savedExercise.userid, username: savedExercise.username, description, duration, date: savedExercise.date });
+
+    // Obtener el usuario al que pertenece este ejercicio
+    const user = await User.findById(userid);
+
+    // Combinar los campos del ejercicio con los del usuario
+    const response = {
+      _id: user._id,
+      username: user.username,
+      description: savedExercise.description,
+      duration: savedExercise.duration,
+      date: new Date(savedExercise.date).toISOString() // Convertir a formato de cadena de texto
+    };
+
+    // Devolver la respuesta combinada
+    res.json(response);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
