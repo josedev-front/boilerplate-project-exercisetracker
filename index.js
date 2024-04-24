@@ -122,6 +122,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
       duration: savedExercise.duration, // Utilizar el valor de duración del ejercicio guardado
       date: new Date(savedExercise.date).toDateString()
     };
+    console.log('Tipo de datos de duration en el response:', typeof response.duration); 
     console.log('Response:', response);
     res.json(response);
   } catch (error) {
