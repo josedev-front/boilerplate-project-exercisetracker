@@ -105,7 +105,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   try {
     const { description, duration, date } = req.body;
     const userid = req.params._id;
-    
+
     // Formatear la fecha utilizando la función checkDate()
     const formattedDate = checkDate(date);
 
@@ -129,7 +129,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
       duration,
       date: formattedDate // Usar la fecha formateada
     };
-
+    console.log('Response:', response);
     // Devolver la respuesta combinada
     res.json(response);
   } catch (error) {
