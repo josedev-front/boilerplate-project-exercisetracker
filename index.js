@@ -50,13 +50,14 @@ const exerciseSchema = new Schema({
 
 const checkDate = (date) => {
   if (!date) {
-    return new Date(); // Devuelve la fecha actual si no se proporciona ninguna fecha
+    return new Date().toDateString(); // Devuelve la fecha actual en el formato requerido
   } else {
     const parts = date.split('-');
     const year = parseInt(parts[0]);
     const month = parseInt(parts[1]) - 1;
     const day = parseInt(parts[2]);
-    return new Date(year, month, day); // Devuelve un objeto de fecha
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[month]} ${day} ${year}`; // Construye la cadena de fecha en el formato deseado
   }
 };
 
