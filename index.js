@@ -43,7 +43,7 @@ const exerciseSchema = new Schema({
     min: [1, 'Must be at least 1 minute long']
   },
   date: { 
-    type: Date, // Cambiado a tipo Date
+    type: String, // Cambiado a tipo String para almacenar el formato deseado
     required: true
   }
 }, { autoIndex: false });
@@ -114,7 +114,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
       userid,
       description,
       duration,
-      date: formattedDate
+      date: formattedDate.toDateString() // Formatear la fecha utilizando toDateString()
     });
     const savedExercise = await newExercise.save();
 
