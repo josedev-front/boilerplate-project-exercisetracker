@@ -1,220 +1,235 @@
-require('dotenv').config();
-const express = require('express');
-const app = express();
-const cors = require('cors');
-const bodyParser = require('body-parser');
+const express = require('express')
+const app = express()
+const moment = require('moment')
+const cors = require('cors')
+const bodyParser = require("body-parser")
+require('dotenv').config()
+
+//server connect
+app.use(cors())
+app.use(express.static('public'))
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/views/index.html')
+});
+
+//mongoose
+const mongodb = require('mongodb');
 const mongoose = require('mongoose');
+const mySecret = process.env['MONGO_URL'];
 const { Schema } = mongoose;
 
-/** Constants */
-const ID_LENGTH = 24;
-const MINLENGTH = [3, 'Must have at least 3 characters - you entered {VALUE}'];
-const IDLENGTH = [ID_LENGTH, `Must be ${ID_LENGTH} characters long - you entered {VALUE}`];
-
-/** Schemas */
-const userSchema = new Schema({
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-    dropDups: true,
-    trim: true,
-    minLength: MINLENGTH
-  }
-}, { autoIndex: false });
-
+//mongoose schema
 const exerciseSchema = new Schema({
-  userid: { 
-    type: String, 
-    required: true,
-    trim: true,
-    minLength: IDLENGTH,
-    maxLength: IDLENGTH
-  },
-  description: { 
-    type: String, 
-    required: true,
-    trim: true,
-    minLength: MINLENGTH
-  },
-  duration: { 
-    type: Number, 
-    required: true,
-    min: [1, 'Must be at least 1 minute long']
-  },
-  date: { 
-    type: Date, // Cambiado a tipo Date
-    required: true
-  }
-}, { autoIndex: false });
+  username: String,
+  description: String,
+  duration: Number,
+  date: String,
+  userId: String
+})
 
-const checkDate = (date) => {
-  if (!date) {
-    return new Date(); // Devuelve la fecha actual si no se proporciona ninguna fecha
-  } else {
-    const parts = date.split('-');
-    const year = parseInt(parts[0]);
-    const month = parseInt(parts[1]) - 1;
-    const day = parseInt(parts[2]);
-    return new Date(year, month, day); // Devuelve un objeto de fecha
-  }
-};
+const userSchema = new Schema({
+  username: String
+})
 
-/** Models */
-const User = mongoose.model("User", userSchema);
-const Exercise = mongoose.model("Exercise", exerciseSchema);
+//mongoose connect
+mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true });
 
-/** Connect to database */
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+let Exercise = mongoose.model("Exercise", exerciseSchema);
+let User = mongoose.model("User", userSchema);
 
-/** Middleware */
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(express.json());
-app.use(cors());
-app.use(express.static('public'));
+let count = 0;
 
-/** Routes */
-app.get('/', async (req, res) => {
-  res.sendFile(__dirname + '/views/index.html');
-});
+app.use(bodyParser.urlencoded({extended: false}))
 
-// Create a new user
-app.post('/api/users', async (req, res) => {
-  try {
-    const { username } = req.body;
-    const newUser = new User({ username });
-    const savedUser = await newUser.save();
-    res.json({ username: savedUser.username, _id: savedUser._id });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
+// User.deleteMany({}).exec()
+// Exercise.deleteMany({}).exec()
 
-// Get a list of all users
-app.get('/api/users', async (req, res) => {
-  try {
-    const users = await User.find({}, 'username _id');
-    res.json(users);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-/*app.post('/api/users/:id/exercises', async (req, res) => {
-  try {
-    const { description, duration, date } = req.body;
-    const userId = req.params.id; // Usar req.params.id
+//POST to Users
 
-    // Suponiendo que tu esquema User tiene un campo "exercises" (array)
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
+app.post('/api/users', async(req,res) => {
+
+  try{
+
+    const userName = await req.body.username;
+    count++;
+
+    let newUser = new User({
+      username: userName
+      // userId: count
+    })
+
+    let myUser = await User.findOne({username: userName})
+
+    if(!myUser){
+      await User.create(newUser)
+
+      myUser = await User.findOne({username: userName})
+
+      res.json({
+        username: userName,
+        _id: myUser._id
+      })
     }
-
-    const newExercise = new Exercise({
-      description,
-      duration,
-      date: date ? new Date(date) : new Date()
-    });
-
-    user.exercises.push(newExercise); // Agregar el nuevo ejercicio al arreglo exercises del usuario
-    await user.save(); // Guardar el documento del usuario actualizado
-
-    const response = {
-      _id: user._id,
-      username: user.username,
-      description,
-      duration: newExercise.duration, // Usar la duración del ejercicio guardado
-      date: new Date(newExercise.date).toDateString()
-    };
-
-    console.log('Respuesta:', response);
-    res.json(response);
-  } catch (error) {
-    console.error(error);
-    res.status(400).json({ error: error.message });
-  }
-});*/
-app.post('/api/users/:_id/exercises', async (req, res) => {
-  try {
-    const { description, duration, date } = req.body;
-    const userid = req.params._id;
-
-    const newExercise = new Exercise({
-      userid,
-      description,
-      duration,
-      date: date ? new Date(date) : new Date()
-    });
-    const savedExercise = await newExercise.save();
-
-    const user = await User.findById(userid);
-
-    const response = {
-      _id: user._id,
-      username: user.username,
-      description,
-      duration: savedExercise.duration,
-      date: new Date(savedExercise.date).toUTCString() // Cambio aquí
-    };
-   /* console.log('Tipo de datos de date en el response:', typeof response.date); 
-    console.log('Response:', response);*/
-    res.json(response);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+    else{
+      res.json({error: `User already exists with an Id of ${myUser._id}`})
+    }
   }
-});  
-// Add an exercise for a specific user
+  catch(err){
+    console.log(err)
+  }
+})
 
+//GET from Users
 
+app.get('/api/users', async(req,res) => {
+  try{
 
-// Get full exercise log of any user
-app.get('/api/users/:_id/logs', async (req, res) => {
-  try {
-    const userid = req.params._id;
-    const { from, to, limit } = req.query;
-    const query = { userid };
+    await User.find({}, (err,data) => {
 
-    // Verificar si los parámetros from y to son fechas válidas
-    const fromDate = from ? new Date(from) : null;
-    const toDate = to ? new Date(to) : null;
-    if ((from && isNaN(fromDate.getTime())) || (to && isNaN(toDate.getTime()))) {
-      return res.status(400).json({ error: "Las fechas from y to deben estar en formato aaaa-mm-dd." });
-    }
+      let usersMap = []
 
-    // Construir el filtro de fecha
-    if (fromDate || toDate) {
-      query.date = {};
-      if (fromDate) query.date.$gte = fromDate;
-      if (toDate) query.date.$lte = toDate;
-    }
+      data.forEach(d => usersMap.push({
+        username: d.username,
+        _id: d._id
+      }))
 
-    // Ejecutar la consulta a la base de datos con la limitación de registros
-    let exercisesQuery = Exercise.find(query);
-    if (limit) exercisesQuery = exercisesQuery.limit(parseInt(limit));
+      res.send(usersMap)
+    })
+  }
+  catch(err){
+    console.log(err)
+  }
+})
 
-    const exercises = await exercisesQuery;
+//POST to exercises
 
-    // Mapear las fechas primero a formato de cadena de texto UTC utilizando el método toUTCString(),
-    // y luego a formato de fecha de cadena utilizando el método toDateString()
-    const formattedExercises = exercises.map(exercise => ({
-      ...exercise._doc,
-      date: new Date(exercise.date).toDateString() // Cambio aquí
-    }));
+app.post('/api/users/:_id/exercises', async(req,res) => {
+  try{
 
-    // Agregar un console log para ver los ejercicios formateados
-    console.log('formattedExercise:', formattedExercises);
-    console.log('Tipo de datos de date: ', typeof formattedExercises.date); 
+    const _id = await req.params;
+    const description = await req.body.description;
+    const duration = await req.body.duration;
+    let date = await req.body.date;
+    let currDate = '';
     
-    // Devolver la respuesta con el registro de ejercicios
-    res.json({ _id: userid, count: formattedExercises.length, log: formattedExercises });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+    if (!date) {
+
+      currDate = new Date(Date.now());
+
+      let myUser = await User.find({_id: _id})
+      
+      let newExercise = new Exercise({
+        username: myUser[0]._doc.username,
+        description: description,
+        duration: duration,
+        date: currDate.toISOString(),
+        userId: myUser[0]._doc._id
+      })
+      
+      await Exercise.create(newExercise)
+
+      res.json({
+        username: myUser[0]._doc.username,
+        description: description,
+        duration: parseInt(duration),
+        date: currDate.toDateString(),
+        _id: myUser[0]._doc._id
+      })
+    }
+    else {
+
+      currDate = date;
+
+      if (currDate.match(/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/)) {
+
+        let tempDate = currDate.split('-')
+        tempDate = new Date(tempDate[0],tempDate[1]-1,tempDate[2])
+
+        let myUser = await User.find({_id: _id})
+
+        let newExercise = new Exercise({
+          username: myUser[0]._doc.username,
+          description: description,
+          duration: duration,
+          date: tempDate.toISOString(),
+          userId: myUser[0]._doc._id
+        })
+
+        await Exercise.create(newExercise)
+
+        res.json({
+          username: myUser[0]._doc.username,
+          description: description,
+          duration: parseInt(duration),
+          date: tempDate.toDateString(),
+          _id: myUser[0]._doc._id
+        })
+      }
+      else {
+        res.json({error: "Invalid Date Format"})
+      }
+    }
   }
-});
-  
+  catch(err){
+    console.log(err)
+  }
+})
 
+app.get('/api/users/:_id/logs', async(req,res) => {
+  try{
+    const { from } = await req.query;
+    const { to } = await req.query;
+    const { limit } = await req.query;
+    const _id = await req.params;
 
-/** Start the server */
+    let myUser = await User.find({_id: _id})
+
+    let dateObj = {}
+
+    if(from){
+      dateObj["$gte"] = new Date(from).toISOString()
+    }
+    if(to){
+      dateObj["$lte"] = new Date(to).toISOString()
+    }
+
+    let filter = {
+      userId: myUser[0]._doc._id
+    }
+    if (from || to){
+      filter.date = dateObj
+    }
+
+    let myExercise = {}
+    if(limit){
+      myExercise = await Exercise.find(filter).limit(parseInt(limit))
+    }
+    else{
+      myExercise = await Exercise.find(filter)
+    }
+
+    let myLog = []
+    myExercise.map(d => myLog.push({
+        description: d.description,
+        duration: d.duration,
+        date: new Date(d.date.split('T')[0].split('-')[0],d.date.split('T')[0].split('-')[1]-1,d.date.split('T')[0].split('-')[2]).toDateString()
+      }))
+
+    res.json({
+      username: myUser[0]._doc.username,
+      count: myExercise.length,
+      _id: myUser[0]._doc._id,
+      log: myLog
+    })
+  }
+  catch(err){
+    console.log(err)
+  }
+})
+
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port)
-});
+})
+
+exports.UserModel = User;
+// exports.createAndSaveUser = createAndSaveUser;
