@@ -156,8 +156,8 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
       duration: savedExercise.duration,
       date: new Date(savedExercise.date).toLocaleString() // Cambio aquí
     };
-    console.log('Tipo de datos de date en el response:', typeof response.date); 
-    console.log('Response:', response);
+   /* console.log('Tipo de datos de date en el response:', typeof response.date); 
+    console.log('Response:', response);*/
     res.json(response);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -201,8 +201,9 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     }));
 
     // Agregar un console log para ver los ejercicios formateados
-    //console.log('formattedExercise:', formattedExercises);
-
+    console.log('formattedExercise:', formattedExercises);
+    console.log('Tipo de datos de date: ', typeof formattedExercises.date); 
+    
     // Devolver la respuesta con el registro de ejercicios
     res.json({ _id: userid, count: formattedExercises.length, log: formattedExercises });
   } catch (error) {
