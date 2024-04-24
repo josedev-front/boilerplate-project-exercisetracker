@@ -99,7 +99,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
       userid,
       description,
       duration,
-      date: date ? new Date(date).getTime() : new Date().getTime()
+      date: date //? new Date(date).getTime() : new Date().getTime()
     });
     const savedExercise = await newExercise.save();
 
@@ -107,12 +107,13 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
     const user = await User.findById(userid);
 
     // Combinar los campos del ejercicio con los del usuario
+    
     const response = {
       _id: user._id,
       username: user.username,
       description,
       duration,
-      date: new Date(savedExercise.date)//.toDateString() // Convertir a formato de cadena de texto
+      date: new Date(savedExercise.date).toDateString() // Convertir a formato de cadena de texto
     };
 
     // Devolver la respuesta combinada
