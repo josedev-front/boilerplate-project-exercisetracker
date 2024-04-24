@@ -49,107 +49,83 @@ const exerciseSchema = new Schema({
 }, { autoIndex: false });
 
 /** Models */
-const user = mongoose.model("user", userSchema);
-const exercise = mongoose.model("exercise", exerciseSchema);
+const User = mongoose.model("User", userSchema);
+const Exercise = mongoose.model("Exercise", exerciseSchema);
 
 /** Connect to database */
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 
 /** Middleware */
-app.use(bodyParser.urlencoded({ extended: false }))
-app.use(express.json())
-app.use(cors())
-app.use(express.static('public'))
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json());
+app.use(cors());
+app.use(express.static('public'));
 
-/** Functions */
-function isValidDate(dateString) {
-  const regEx = /^\d{4}-\d{2}-\d{2}$/;
-  if (!dateString.match(regEx)) return false;
-  const d = new Date(dateString);
-  const dNum = d.getTime();
-  if (!dNum && dNum !== 0) return false;
-  return d.toISOString().slice(0, 10) === dateString;
-}
-
-/** Process routes */
+/** Routes */
 app.get('/', async (req, res) => {
-  res.sendFile(__dirname + '/views/index.html')
-  await user.syncIndexes();
-  await exercise.syncIndexes();
+  res.sendFile(__dirname + '/views/index.html');
 });
 
-app.post('/api/users/:_id/exercises', async function (req, res) {
-  const id = req.params._id;
-  const { description, duration, date } = req.body;
-
-  if (date && !isValidDate(date)) {
-    return res.json({ error: `${date} is not a valid date - must be in format yyyy-mm-dd` });
+// Create a new user
+app.post('/api/users', async (req, res) => {
+  try {
+    const { username } = req.body;
+    const newUser = new User({ username });
+    const savedUser = await newUser.save();
+    res.json({ username: savedUser.username, _id: savedUser._id });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
+});
 
-  const passedDate = Number((date) ? date.replace(/-/g, '') : new Date().toISOString().substring(0, 10).replace(/-/g, ''));
-
-  const newExercise = new exercise({
-    userid: id,
-    description: description,
-    duration: duration,
-    date: passedDate
-  });
-
-  const error = newExercise.validateSync();
-  if (error) {
-    const errMsg = { '': 'Error(s)' };
-    if (error.errors.userid !== undefined) {
-      errMsg.id = error.errors.userid.message;
-    }
-    if (error.errors.description !== undefined) {
-      errMsg.description = error.errors.description.message;
-    }
-    if (error.errors.duration !== undefined) {
-      errMsg.duration = error.errors.duration.message;
-    }
-    if (error.errors.date !== undefined) {
-      errMsg.date = error.errors.date.message;
-    }
-    return res.json(errMsg);
+// Get a list of all users
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await User.find({}, 'username _id');
+    res.json(users);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
+});
 
-  exercise.findOne({ userid: id, description: description })
-    .exec(function (err, existingExercise) {
-      if (err) {
-        return res.json({ error: err });
-      }
-      if (!existingExercise) {
-        newExercise.save(function (err, data) {
-          if (err) {
-            return res.json({ error: err });
-          }
-          let d = data.date.toString();
-          d = d.substring(0, 4) + '-' + d.substring(4, 6) + '-' + d.substring(6, 9);
-          d = new Date(d).toDateString();
-          res.json({
-            username: username,
-            description: description,
-            duration: data.duration,
-            date: d,
-            _id: id
-          });
-        });
-      } else {
-        let dd = existingExercise.date.toString();
-        dd = dd.substring(0, 4) + '-' + dd.substring(4, 6) + '-' + dd.substring(6, 9);
-        dd = new Date(dd).toDateString();
-        res.json({
-          '': 'Already in the database',
-          username: username,
-          description: description,
-          duration: existingExercise.duration,
-          date: dd,
-          _id: id
-        });
-      }
+// Add an exercise for a specific user
+app.post('/api/users/:_id/exercises', async (req, res) => {
+  try {
+    const { description, duration, date } = req.body;
+    const userid = req.params._id;
+    const newExercise = new Exercise({
+      userid,
+      description,
+      duration,
+      date: date ? new Date(date).getTime() : new Date().getTime()
     });
+    const savedExercise = await newExercise.save();
+    res.json({ _id: savedExercise.userid, username: savedExercise.username, description, duration, date: savedExercise.date });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 });
 
-const listener = app.listen(process.env.PORT || 3000, () => {
-  console.log('Your app is listening on port ' + listener.address().port)
-})
+// Get full exercise log of any user
+app.get('/api/users/:_id/logs', async (req, res) => {
+  try {
+    const userid = req.params._id;
+    const { from, to, limit } = req.query;
+    const query = { userid };
+    if (from || to) {
+      query.date = {};
+      if (from) query.date.$gte = new Date(from).getTime();
+      if (to) query.date.$lte = new Date(to).getTime();
+    }
+    const exercises = await Exercise.find(query).limit(parseInt(limit) || undefined);
+    res.json({ _id: userid, count: exercises.length, log: exercises });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/** Start the server */
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
