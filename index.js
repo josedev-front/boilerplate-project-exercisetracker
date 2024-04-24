@@ -103,55 +103,47 @@ app.post('/api/users/:_id/exercises', (req, res) => {
     }
   });
 });
-app.get('/api/users/:_id/logs', (req, res) => {
-  let userId = req.params._id;
-  let responseObj = {};
-  let limitParam = req.query.limit ? parseInt(req.query.limit) : 0;
-  let toParam = req.query.to;
-  let fromParam = req.query.from;
-  let queryObj = { userId: userId };
+app.get('/api/users/:_id/logs', async (req, res) => {
+  try {
+    const userId = req.params._id;
+    const { from, to, limit } = req.query;
+    let query = { userId };
 
-  if (fromParam || toParam) {
-    queryObj.date = {};
-    if (fromParam) {
-      queryObj.date['$gte'] = new Date(fromParam);
+    // Si se proporciona el parámetro "from", se agrega a la consulta
+    if (from) {
+      query.date = { $gte: new Date(from) };
     }
-    if (toParam) {
-      queryObj.date['$lte'] = new Date(toParam);
+
+    // Si se proporciona el parámetro "to", se agrega a la consulta
+    if (to) {
+      query.date = { ...query.date, $lte: new Date(to) };
     }
+
+    // Realizar la consulta a la base de datos para obtener los registros de ejercicio
+    let exercises = await exerciseModel.find(query);
+
+    // Si se proporciona el parámetro "limit", limitar la cantidad de registros de ejercicio
+    if (limit) {
+      exercises = exercises.slice(0, parseInt(limit));
+    }
+
+    // Crear el objeto de respuesta
+    const responseObj = {
+      _id: userId,
+      logs: exercises.map(exercise => ({
+        description: exercise.description,
+        duration: exercise.duration,
+        date: exercise.date.toDateString()
+      })),
+      count: exercises.length
+    };
+
+    res.json(responseObj);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
-
-  userModel.findById(userId, (err, userFound) => {
-    if (err) {
-      console.error(err);
-      res.status(500).json({ error: "Internal Server Error" });
-    } else if (!userFound) {
-      res.status(404).json({ error: "User not found" });
-    } else {
-      responseObj = {
-        _id: userFound._id,
-        username: userFound.username
-      };
-
-      exerciseModel.find(queryObj).limit(limitParam).exec((err, exercises) => {
-        if (err) {
-          console.error(err);
-          res.status(500).json({ error: "Internal Server Error" });
-        } else {
-          exercises = exercises.map(exercise => ({
-            description: exercise.description,
-            duration: exercise.duration,
-            date: exercise.date.toDateString()
-          }));
-          responseObj.log = exercises;
-          responseObj.count = exercises.length;
-          res.json(responseObj);
-        }
-      });
-    }
-  });
 });
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Your app is listening on port ${PORT}`);
