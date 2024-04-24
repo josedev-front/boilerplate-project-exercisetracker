@@ -164,7 +164,6 @@ app.get('/api/users/:_id/logs', async (req, res) => {
 
 
 /** Start the server */
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+const listener = app.listen(process.env.PORT || 3000, () => {
+  console.log('Your app is listening on port ' + listener.address().port)
+})
