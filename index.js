@@ -47,6 +47,19 @@ let exerciseSchema = mongoose.Schema(
 
 let Exercise = mongoose.model("Exercise", exerciseSchema);
 
+const checkDate = (date) => {
+  if (!date) {
+      return (new Date(Date.now())).toDateString();
+  } else {
+      const parts = date.split('-');
+      const year = parseInt(parts[0]);
+      const month = parseInt(parts[1]) - 1;
+      const day = parseInt(parts[2]);
+
+      const utcDate = new Date(Date.UTC(year, month, day));
+      return utcDate.toDateString();
+  }
+}
 
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
@@ -84,13 +97,7 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
   let userId = req.params._id;
   let description = req.body.description;
   let duration = parseInt(req.body.duration);
-  let date = new Date(req.body.date);
-
-  if (date == "Invalid Date"){
-    date = new Date().toDateString()
-  } else {
-    date = new Date(date).toDateString()
-  }
+  let date = checkDate(req.body.date);
 
   if (description === ""){
     return res.json({error: "description is required"})
