@@ -99,7 +99,7 @@ app.get('/api/users', async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
-
+/*
 app.post('/api/users/:_id/exercises', async (req, res) => {
   try {
     const { description, duration, date } = req.body;
@@ -128,45 +128,44 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
-});
+});*/
 // Add an exercise for a specific user
-/*app.post('/api/users/:_id/exercises', async (req, res) => {
+app.post('/api/users/:_id/exercises', async (req, res) => {
   try {
+    // duration is of type string
     const { description, duration, date } = req.body;
     const userid = req.params._id;
     
     // Formatear la fecha utilizando la función checkDate()
     const formattedDate = checkDate(date);
 
-    // Guardar el nuevo ejercicio en la base de datos
+    // duration is converted but never used for the response
     const newExercise = new Exercise({
       userid,
       description,
       duration,
-      date: formattedDate.toDateString() // Formatear la fecha utilizando toDateString()
+      date: formattedDate
     });
     const savedExercise = await newExercise.save();
+
     // Obtener el usuario al que pertenece este ejercicio
     const user = await User.findById(userid);
 
-    // Combinar los campos del ejercicio con los del usuario
+    // duration is still type string
     const response = {
       _id: user._id,
       username: user.username,
       description,
       duration,
-      date: formattedDate.toDateString() // Formatear la fecha utilizando toDateString()
+      date: formattedDate // Usar la fecha formateada
     };
-
-    // Imprimir el objeto response en la consola
     console.log('Response:', response);
-
     // Devolver la respuesta combinada
     res.json(response);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
-});*/
+});
 
 
 // Get full exercise log of any user
