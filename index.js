@@ -24,29 +24,41 @@ const userSchema = new Schema({
 }, { autoIndex: false });
 
 const exerciseSchema = new Schema({
-  userid: {
-    type: String,
+  userid: { 
+    type: String, 
     required: true,
     trim: true,
     minLength: IDLENGTH,
     maxLength: IDLENGTH
   },
-  description: {
-    type: String,
+  description: { 
+    type: String, 
     required: true,
     trim: true,
     minLength: MINLENGTH
   },
-  duration: {
-    type: Number,
+  duration: { 
+    type: Number, 
     required: true,
     min: [1, 'Must be at least 1 minute long']
   },
-  date: {
-    type: Number,
+  date: { 
+    type: Date, // Cambiado a tipo Date
     required: true
   }
 }, { autoIndex: false });
+
+const checkDate = (date) => {
+  if (!date) {
+    return new Date(); // Devuelve la fecha actual si no se proporciona ninguna fecha
+  } else {
+    const parts = date.split('-');
+    const year = parseInt(parts[0]);
+    const month = parseInt(parts[1]) - 1;
+    const day = parseInt(parts[2]);
+    return new Date(year, month, day); // Devuelve un objeto de fecha
+  }
+};
 
 /** Models */
 const User = mongoose.model("User", userSchema);
@@ -93,13 +105,16 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   try {
     const { description, duration, date } = req.body;
     const userid = req.params._id;
+    
+    // Formatear la fecha utilizando la función checkDate()
+    const formattedDate = checkDate(date);
 
     // Guardar el nuevo ejercicio en la base de datos
     const newExercise = new Exercise({
       userid,
       description,
       duration,
-      date: date //? new Date(date).getTime() : new Date().getTime()
+      date: formattedDate
     });
     const savedExercise = await newExercise.save();
 
@@ -107,13 +122,12 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
     const user = await User.findById(userid);
 
     // Combinar los campos del ejercicio con los del usuario
-    
     const response = {
       _id: user._id,
       username: user.username,
       description,
       duration,
-      date: new Date(savedExercise.date).toDateString() // Convertir a formato de cadena de texto
+      date: formattedDate // Usar la fecha formateada
     };
 
     // Devolver la respuesta combinada
