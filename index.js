@@ -197,7 +197,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     // Mapear las fechas a formato de cadena de texto utilizando el método toDateString()
     const formattedExercises = exercises.map(exercise => ({
       ...exercise._doc,
-      date: new Date(exercise.date).toLocaleString()
+      date: new Date(exercise.date).toISOString()
     }));
 
     // Agregar un console log para ver los ejercicios formateados
