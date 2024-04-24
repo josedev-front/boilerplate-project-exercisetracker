@@ -104,32 +104,25 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   try {
     const { description, duration, date } = req.body;
     const userid = req.params._id;
-    
-    // Formatear la fecha utilizando la función checkDate()
-    const formattedDate = checkDate(date);
 
-    // Guardar el nuevo ejercicio en la base de datos
     const newExercise = new Exercise({
       userid,
       description,
       duration,
-      date: formattedDate
+      date: date ? new Date(date) : new Date()
     });
     const savedExercise = await newExercise.save();
 
-    // Obtener el usuario al que pertenece este ejercicio
     const user = await User.findById(userid);
 
-    // Combinar los campos del ejercicio con los del usuario
     const response = {
       _id: user._id,
       username: user.username,
       description,
-      duration,
-      date: formattedDate // Usar la fecha formateada
+      duration: savedExercise.duration, // Utilizar el valor de duración del ejercicio guardado
+      date: new Date(savedExercise.date).toDateString()
     };
-    console.log('Response:', response);
-    // Devolver la respuesta combinada
+
     res.json(response);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -209,46 +202,6 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     }));
 
     // Agregar un console log para ver los ejercicios formateados
-    console.log('formattedExercise:', formattedExercises);
-
-    // Devolver la respuesta con el registro de ejercicios
-    res.json({ _id: userid, count: formattedExercises.length, log: formattedExercises });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});app.get('/api/users/:_id/logs', async (req, res) => {
-  try {
-    const userid = req.params._id;
-    const { from, to, limit } = req.query;
-    const query = { userid };
-
-    // Verificar si los parámetros from y to son fechas válidas
-    const fromDate = from ? new Date(from) : null;
-    const toDate = to ? new Date(to) : null;
-    if ((from && isNaN(fromDate.getTime())) || (to && isNaN(toDate.getTime()))) {
-      return res.status(400).json({ error: "Las fechas from y to deben estar en formato aaaa-mm-dd." });
-    }
-
-    // Construir el filtro de fecha
-    if (fromDate || toDate) {
-      query.date = {};
-      if (fromDate) query.date.$gte = fromDate;
-      if (toDate) query.date.$lte = toDate;
-    }
-
-    // Ejecutar la consulta a la base de datos con la limitación de registros
-    let exercisesQuery = Exercise.find(query);
-    if (limit) exercisesQuery = exercisesQuery.limit(parseInt(limit));
-
-    const exercises = await exercisesQuery;
-
-    // Mapear las fechas a formato de cadena de texto utilizando el método toDateString()
-    const formattedExercises = exercises.map(exercise => ({
-      ...exercise._doc,
-      date: new Date(exercise.date).toDateString()
-    }));
-
-    // Agregar un console log para ver los ejercicios formateados
     //console.log('formattedExercise:', formattedExercises);
 
     // Devolver la respuesta con el registro de ejercicios
@@ -257,6 +210,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
+  
 
 
 /** Start the server */
