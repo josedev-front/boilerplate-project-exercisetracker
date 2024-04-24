@@ -128,17 +128,27 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     const userid = req.params._id;
     const { from, to, limit } = req.query;
     const query = { userid };
+
+    // Agregar condiciones de fecha si se proporcionan los parámetros from o to
     if (from || to) {
       query.date = {};
-      if (from) query.date.$gte = new Date(from).toISOString(); // Convertir a formato de cadena de texto
-      if (to) query.date.$lte = new Date(to).toISOString(); // Convertir a formato de cadena de texto
+      if (from) query.date.$gte = new Date(from).toISOString();
+      if (to) query.date.$lte = new Date(to).toISOString();
     }
-    const exercises = await Exercise.find(query).limit(parseInt(limit) || undefined);
+
+    // Ejecutar la consulta a la base de datos con la limitación de registros
+    let exercisesQuery = Exercise.find(query);
+    if (limit) exercisesQuery = exercisesQuery.limit(parseInt(limit));
+
+    const exercises = await exercisesQuery;
+
     // Mapear las fechas a formato de cadena de texto utilizando el método toDateString()
     const formattedExercises = exercises.map(exercise => ({
       ...exercise._doc,
       date: new Date(exercise.date).toDateString()
     }));
+
+    // Devolver la respuesta con el registro de ejercicios
     res.json({ _id: userid, count: formattedExercises.length, log: formattedExercises });
   } catch (error) {
     res.status(400).json({ error: error.message });
