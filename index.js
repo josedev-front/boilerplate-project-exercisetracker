@@ -129,11 +129,18 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     const { from, to, limit } = req.query;
     const query = { userid };
 
-    // Agregar condiciones de fecha si se proporcionan los parámetros from o to
-    if (from || to) {
+    // Verificar si los parámetros from y to son fechas válidas
+    const fromDate = from ? new Date(from) : null;
+    const toDate = to ? new Date(to) : null;
+    if ((from && isNaN(fromDate.getTime())) || (to && isNaN(toDate.getTime()))) {
+      return res.status(400).json({ error: "Las fechas from y to deben estar en formato aaaa-mm-dd." });
+    }
+
+    // Construir el filtro de fecha
+    if (fromDate || toDate) {
       query.date = {};
-      if (from) query.date.$gte = new Date(from).toISOString();
-      if (to) query.date.$lte = new Date(to).toISOString();
+      if (fromDate) query.date.$gte = fromDate;
+      if (toDate) query.date.$lte = toDate;
     }
 
     // Ejecutar la consulta a la base de datos con la limitación de registros
@@ -154,6 +161,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
+
 
 /** Start the server */
 const PORT = process.env.PORT || 3000;
