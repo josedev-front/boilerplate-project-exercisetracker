@@ -154,7 +154,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
       username: user.username,
       description,
       duration: savedExercise.duration,
-      date: new Date(savedExercise.date).toLocaleString() // Cambio aquí
+      date: new Date(savedExercise.date).toUTCString() // Cambio aquí
     };
    /* console.log('Tipo de datos de date en el response:', typeof response.date); 
     console.log('Response:', response);*/
