@@ -99,7 +99,7 @@ app.get('/api/users', async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
-app.post('/api/users/:id/exercises', async (req, res) => {
+/*app.post('/api/users/:id/exercises', async (req, res) => {
   try {
     const { description, duration, date } = req.body;
     const userId = req.params.id; // Usar req.params.id
@@ -133,8 +133,8 @@ app.post('/api/users/:id/exercises', async (req, res) => {
     console.error(error);
     res.status(400).json({ error: error.message });
   }
-});
-/*app.post('/api/users/:_id/exercises', async (req, res) => {
+});*/
+app.post('/api/users/:_id/exercises', async (req, res) => {
   try {
     const { description, duration, date } = req.body;
     const userid = req.params._id;
@@ -153,16 +153,16 @@ app.post('/api/users/:id/exercises', async (req, res) => {
       _id: user._id,
       username: user.username,
       description,
-      duration: savedExercise.duration, // Utilizar el valor de duración del ejercicio guardado
-      date: new Date(savedExercise.date).toDateString()
+      duration: savedExercise.duration,
+      date: new Date(savedExercise.date).toUTCString() // Cambio aquí
     };
-    console.log('Tipo de datos de duration en el response:', typeof response.duration); 
+    console.log('Tipo de datos de duration en el response:', typeof response.date); 
     console.log('Response:', response);
     res.json(response);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
-});*/
+});  
 // Add an exercise for a specific user
 
 
