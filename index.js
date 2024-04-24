@@ -114,11 +114,16 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     const query = { userid };
     if (from || to) {
       query.date = {};
-      if (from) query.date.$gte = new Date(from).getTime();
-      if (to) query.date.$lte = new Date(to).getTime();
+      if (from) query.date.$gte = new Date(from).toISOString(); // Convertir a formato de cadena de texto
+      if (to) query.date.$lte = new Date(to).toISOString(); // Convertir a formato de cadena de texto
     }
     const exercises = await Exercise.find(query).limit(parseInt(limit) || undefined);
-    res.json({ _id: userid, count: exercises.length, log: exercises });
+    // Mapear las fechas a formato de cadena de texto utilizando el método toDateString()
+    const formattedExercises = exercises.map(exercise => ({
+      ...exercise._doc,
+      date: new Date(exercise.date).toDateString()
+    }));
+    res.json({ _id: userid, count: formattedExercises.length, log: formattedExercises });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
