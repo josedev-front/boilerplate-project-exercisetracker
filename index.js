@@ -122,6 +122,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   }
 });
 
+
 // Get full exercise log of any user
 app.get('/api/users/:_id/logs', async (req, res) => {
   try {
