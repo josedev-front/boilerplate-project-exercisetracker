@@ -50,14 +50,13 @@ const exerciseSchema = new Schema({
 
 const checkDate = (date) => {
   if (!date) {
-    return new Date().toDateString(); // Devuelve la fecha actual en el formato requerido
+    return new Date(); // Devuelve la fecha actual si no se proporciona ninguna fecha
   } else {
     const parts = date.split('-');
     const year = parseInt(parts[0]);
     const month = parseInt(parts[1]) - 1;
     const day = parseInt(parts[2]);
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return `${months[month]} ${day} ${year}`; // Construye la cadena de fecha en el formato deseado
+    return new Date(year, month, day); // Devuelve un objeto de fecha
   }
 };
 
@@ -128,7 +127,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
       username: user.username,
       description,
       duration,
-      date: formattedDate // Usar la fecha formateada
+      date: formattedDate.toDateString() // Formatear la fecha utilizando toDateString()
     };
 
     // Imprimir el objeto response en la consola
@@ -186,4 +185,4 @@ app.get('/api/users/:_id/logs', async (req, res) => {
 /** Start the server */
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port)
-})
+});
