@@ -110,9 +110,9 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
     const response = {
       _id: user._id,
       username: user.username,
-      description: savedExercise.description,
-      duration: savedExercise.duration,
-      date: new Date(savedExercise.date).toISOString() // Convertir a formato de cadena de texto
+      description,
+      duration,
+      date: new Date(savedExercise.date).toDateString() // Convertir a formato de cadena de texto
     };
 
     // Devolver la respuesta combinada
