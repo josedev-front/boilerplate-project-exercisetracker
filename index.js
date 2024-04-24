@@ -99,7 +99,42 @@ app.get('/api/users', async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
-app.post('/api/users/:_id/exercises', async (req, res) => {
+app.post('/api/users/:id/exercises', async (req, res) => {
+  try {
+    const { description, duration, date } = req.body;
+    const userId = req.params.id; // Usar req.params.id
+
+    // Suponiendo que tu esquema User tiene un campo "exercises" (array)
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    const newExercise = new Exercise({
+      description,
+      duration,
+      date: date ? new Date(date) : new Date()
+    });
+
+    user.exercises.push(newExercise); // Agregar el nuevo ejercicio al arreglo exercises del usuario
+    await user.save(); // Guardar el documento del usuario actualizado
+
+    const response = {
+      _id: user._id,
+      username: user.username,
+      description,
+      duration: newExercise.duration, // Usar la duración del ejercicio guardado
+      date: new Date(newExercise.date).toDateString()
+    };
+
+    console.log('Respuesta:', response);
+    res.json(response);
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ error: error.message });
+  }
+});
+/*app.post('/api/users/:_id/exercises', async (req, res) => {
   try {
     const { description, duration, date } = req.body;
     const userid = req.params._id;
@@ -127,7 +162,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
-});
+});*/
 // Add an exercise for a specific user
 
 
