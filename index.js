@@ -100,8 +100,43 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-// Add an exercise for a specific user
 app.post('/api/users/:_id/exercises', async (req, res) => {
+  try {
+    const { description, duration, date } = req.body;
+    const userid = req.params._id;
+    
+    // Formatear la fecha utilizando la función checkDate()
+    const formattedDate = checkDate(date);
+
+    // Guardar el nuevo ejercicio en la base de datos
+    const newExercise = new Exercise({
+      userid,
+      description,
+      duration,
+      date: formattedDate
+    });
+    const savedExercise = await newExercise.save();
+
+    // Obtener el usuario al que pertenece este ejercicio
+    const user = await User.findById(userid);
+
+    // Combinar los campos del ejercicio con los del usuario
+    const response = {
+      _id: user._id,
+      username: user.username,
+      description,
+      duration,
+      date: formattedDate // Usar la fecha formateada
+    };
+    console.log('Response:', response);
+    // Devolver la respuesta combinada
+    res.json(response);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+// Add an exercise for a specific user
+/*app.post('/api/users/:_id/exercises', async (req, res) => {
   try {
     const { description, duration, date } = req.body;
     const userid = req.params._id;
@@ -117,7 +152,6 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
       date: formattedDate.toDateString() // Formatear la fecha utilizando toDateString()
     });
     const savedExercise = await newExercise.save();
-
     // Obtener el usuario al que pertenece este ejercicio
     const user = await User.findById(userid);
 
@@ -131,14 +165,14 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
     };
 
     // Imprimir el objeto response en la consola
-    //console.log('Response:', response);
+    console.log('Response:', response);
 
     // Devolver la respuesta combinada
     res.json(response);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
-});
+});*/
 
 
 // Get full exercise log of any user
@@ -215,7 +249,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     }));
 
     // Agregar un console log para ver los ejercicios formateados
-    console.log('formattedExercise:', formattedExercises);
+    //console.log('formattedExercise:', formattedExercises);
 
     // Devolver la respuesta con el registro de ejercicios
     res.json({ _id: userid, count: formattedExercises.length, log: formattedExercises });
